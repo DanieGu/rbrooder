@@ -1,0 +1,1 @@
+{"manualControl": true, "targetTemp": 31, "manualHeatIndex": 50, "pid": {"maxOutput": 100, "P": 50.0, "D": 230.0, "I": 0.25, "responseTime": 0.0, "minOutput": 20, "limitI": 0.0}}
