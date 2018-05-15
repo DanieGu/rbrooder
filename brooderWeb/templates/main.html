@@ -1,0 +1,158 @@
+{% extends "layout.html" %}
+{% block head %}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
+      google.charts.load('current', {'packages':['line', 'corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+
+      var chartDiv = document.getElementById('chart_div');
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('date', 'Time');
+      data.addColumn('number', "Brooder Temperature");
+      data.addColumn('number', "Bulb Brightness");
+
+      data.addRows([
+		{% for datapt in dataPoints %}
+			[new Date("{{datapt['lastUpdateTime']}}"), {{datapt['currentTemp']}},  {{datapt['brightness']}}],
+		{% endfor %}
+      ]);
+
+      var materialOptions = {
+        chart: {
+          title: 'Brooder temperatures and bulb brightness'
+        },
+        width: 900,
+        height: 500,
+        series: {
+          // Gives each series an axis name that matches the Y-axis below.
+          0: {axis: 'Temps'},
+          1: {axis: 'Brightness'}
+        },
+        axes: {
+          // Adds labels to each axis; they don't have to match the axis names.
+          y: {
+            Temps: {label: 'Temps (Celsius)', range: { max: 40, min: 20 }, format: { pattern: 'decimal' }},
+            Brightness: {label: 'Brightness', range: { max: 100, min: 0 } }
+          }
+        }
+      };
+	  
+	  var classicOptions = {
+        title: 'Brooder temperatures and bulb brightness',
+        aggregationTarget: 'category',
+        focusTarget: 'category',
+        width: 900,
+        height: 500,
+        // Gives each series an axis that matches the vAxes number below.
+        series: {
+          0: {targetAxisIndex: 0},
+          1: {targetAxisIndex: 1}
+        },
+        vAxes: {
+          // Adds titles to each axis.
+          0: {title: 'Temps (Celsius)', minValue: 20, maxValue: 40},
+          1: {title: 'Brightness', minValue: 0, maxValue: 100}
+        }
+      };
+
+      function drawMaterialChart() {
+        var materialChart = new google.charts.Line(chartDiv);
+        materialChart.draw(data, materialOptions);
+      }
+
+	  function drawClassicChart() {
+        var classicChart = new google.visualization.LineChart(chartDiv);
+        classicChart.draw(data, classicOptions);
+      }
+      
+	  drawClassicChart();
+
+    }
+</script
+{% endblock %}
+
+{% block body %}
+ 
+<div class="block1">
+<h1>PI Brooder</h1>
+  <h2>Brooder Stats </h2>
+  <div>
+	  <ul>
+		<li>Current Temp {{stats["currentTemp"]}}</li>
+		<li>Current Humidity {{stats["currentHumidity"]}}</li>
+		<li>Last Updated {{stats["lastUpdateTime"]}}</li>
+		<li>Bulb Brightness {{stats["brightness"]}}%</li>
+	  <ul>
+  </div>
+  <div name="configBrooder">
+	<h2>Configure Brooder</h2>
+	<form action="{{ url_for('update') }}" method="post">
+		<ul class="configBrooder">
+		<li>
+		<span>Target Temperature</span>
+		<select name="targetTemp">
+		  {% for temp in range(20, 40) %}
+			{% if temp == brooderConfig["targetTemp"] %}
+				<option value="{{temp}}" selected>{{temp}}</option>
+			{% else %}
+				<option value="{{temp}}">{{temp}}</option>
+			{% endif %}
+		  {% endfor %}
+		</select>
+		</li>
+		<li>
+		<span>Max Auto Brightness</span>
+		<select name="maxBrightness">
+		  {% for brightness in range(0, 101) %}
+			{% if brightness == brooderConfig["pid"]["maxOutput"] %}
+				<option value="{{brightness}}" selected>{{brightness}}</option>
+			{% else %}
+				<option value="{{brightness}}">{{brightness}}</option>
+			{% endif %}
+		  {% endfor %}
+		</select>
+		</li>
+		<li>
+		<span>Min Auto Brightness</span>
+		<select name="minBrightness">
+		  {% for brightness in range(0, 101) %}
+			{% if brightness == brooderConfig["pid"]["minOutput"] %}
+				<option value="{{brightness}}" selected>{{brightness}}</option>
+			{% else %}
+				<option value="{{brightness}}">{{brightness}}</option>
+			{% endif %}
+		  {% endfor %}
+		</select>
+		</li>
+		<li>
+		<span>Manual Control</span>
+		<input name="manualControl" type="checkbox" {% if brooderConfig['manualControl'] %} checked {% endif %}/>
+		</li>
+		<li>
+		<span>Manual Brightness</span>
+		<select name="manualBrightness">
+		  {% for brightness in range(0, 101) %}
+			{% if brightness == brooderConfig["manualHeatIndex"] %}
+				<option value="{{brightness}}" selected>{{brightness}}</option>
+			{% else %}
+				<option value="{{brightness}}">{{brightness}}</option>
+			{% endif %}
+		  {% endfor %}
+		</select>
+		</li>
+		<li>
+		<input type="submit" value="Submit">
+		</li>
+		</ul>
+		{{ form.csrf_token }}
+	</form>
+  <div>
+  <div id="chart_div"></div>
+  <p>
+{{stats["message"]}}
+  </p>
+</div>
+{% endblock %}
